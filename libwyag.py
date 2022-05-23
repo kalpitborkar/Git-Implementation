@@ -108,7 +108,7 @@ def repo_dir(repo, *path, mkdir=False):
         return None
 
 
-def create_repo(path):
+def repo_create(path):
     """
     Creates a new repository at path
     """
@@ -137,6 +137,7 @@ def create_repo(path):
     with open(repo_file(repo, "HEAD"), "w") as f:
         f.write("ref: refs/heads/master\n")
 
+    # .git/config
     with open(repo_file(repo, "config"), "w") as f:
         config = repo_default_config()
         config.write(f)
@@ -166,7 +167,7 @@ argsp.add_argument("path",
 
 
 def cmd_init(args):
-    create_repo(args.path)
+    repo_create(args.path)
 
 
 # repo_find function
@@ -357,3 +358,121 @@ def object_hash(fd, fmt, repo=None):
         raise Exception("Unknown type %s!" % fmt)
 
     return object_write(obj, repo)
+
+# Reading commit history
+
+# Parsing commits
+
+
+def kvlm_parse(raw, start=0, dct=None):
+    if not dct:
+        dct = collections.OrderedDict()
+
+    # Search for next space and next newline
+    spc = raw.find(b' ', start)
+    nl = raw.find(b'\n', start)
+
+    # Base case
+    if(spc < 0) or (nl < spc):
+        assert(nl == start)
+        dct[b''] = raw[start+1:]
+        return dct
+
+    # Recurse
+    key = raw[start:spc]
+
+    end = start
+    while True:
+        end = raw.find(b'\n', end+1)
+        if raw[end+1] != ord(' '):
+            break
+
+    # Grab value and drop spaces in continuation lines
+    value = raw[spc+1:end].replace(b'\n ', b'\n')
+
+    # Don't overwrite existing data contents
+    if key in dct:
+        if type(dct[key]) == list:
+            dct[key].append(value)
+        else:
+            dct[key] = [dct[key], value]
+    else:
+        dct[key] = value
+
+    return kvlm_parse(raw, start=end+1, dct=dct)
+
+
+def kvlm_serialize(kvlm):
+    ret = b''
+
+    # Output fields
+    for k in kvlm.keys():
+        # Skip message
+        if k == b'':
+            continue
+        val = kvlm[k]
+        # Normalize to a list
+        if type(val) != list:
+            val = [val]
+
+        for v in val:
+            ret += k + b' ' + (v.replace(b'\n', b'\n ')) + b'\n'
+
+    # Append message
+    ret += b'\n' + kvlm[b'']
+
+    return ret
+
+# Commit object
+
+
+class GitCommit(GitObject):
+    fmt = b'commit'
+
+    def deserialize(self, data):
+        self.kvlm = kvlm_parse(data)
+
+    def serialize(self):
+        return kvlm_serialize(self.kvlm)
+
+# log command
+
+
+argsp = argsubparsers.add_parser(
+    "log", help="Display history of a given commit.")
+argsp.add_argument("commit",
+                   default="HEAD",
+                   nargs="?",
+                   help="Commit to start at.")
+
+
+def cmd_log(args):
+    repo = repo_find()
+
+    print("digraph wyaglog{")
+    log_graphviz(repo, object_find(repo, args.commit), set())
+    print("}")
+
+
+def log_graphviz(repo, sha, seen):
+
+    if sha in seen:
+        return
+    seen.add(sha)
+
+    commit = object_read(repo, sha)
+    assert (commit.fmt == b'commit')
+
+    if not b'parent' in commit.kvlm.keys():
+        # Base case: the initial commit.
+        return
+
+    parents = commit.kvlm[b'parent']
+
+    if type(parents) != list:
+        parents = [parents]
+
+    for p in parents:
+        p = p.decode("ascii")
+        print("c_{0} -> c_{1};".format(sha, p))
+        log_graphviz(repo, p, seen)
