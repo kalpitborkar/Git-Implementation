@@ -26,7 +26,7 @@ PyGit implements all the fundamental features of git:
 
 - `GitObject`:
   - Objects are of multiple types, and they all share the same storage/retrieval mechanism and the same general header format.
-  - `GitOject` is a generic object with two unimplemented methods:
+  - `GitObject` is a generic object with two unimplemented methods:
     - `serialize()`
     - `deserialize()`
 
