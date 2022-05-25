@@ -1,7 +1,7 @@
 # PyGit
 PyGit is implementation of the [Git version control system](https://git-scm.com/) from scratch, written purely in Python.
 
-PyGit implements all the fundamental features of git:
+PyGit implements the following fundamental features of git:
   - `add`
   - `cat-file`
   - `checkout`
