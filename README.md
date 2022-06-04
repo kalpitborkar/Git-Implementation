@@ -17,7 +17,7 @@ PyGit implements the following fundamental features of git:
   - `show-ref`
   - `tag`
 
-# PyGit structure
+## PyGit structure
 - `GitRepository`:
   - Object representing a git repository.
   - `GitRepository` consists of two things: 
@@ -43,3 +43,7 @@ PyGit implements the following fundamental features of git:
     - `author` and `committer` are separate, because the author of a commit is not necessarily the person who can commit it
     - `gpgsig` is the PGP signature of this object.
 
+## References
+- https://git-scm.com/docs/gitrepository-layout
+- https://git-scm.com/book/en/v2/Git-Internals-Git-Objects
+- https://www.freecodecamp.org/news/git-internals-objects-branches-create-repo/
