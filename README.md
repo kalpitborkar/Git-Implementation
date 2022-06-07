@@ -43,6 +43,9 @@ PyGit implements the following fundamental features of git:
     - `author` and `committer` are separate, because the author of a commit is not necessarily the person who can commit it
     - `gpgsig` is the PGP signature of this object.
 
+## License
+Distributed under the MIT License. See `LICENSE.md` for more information.
+
 ## References
 - https://git-scm.com/docs/gitrepository-layout
 - https://git-scm.com/book/en/v2/Git-Internals-Git-Objects
